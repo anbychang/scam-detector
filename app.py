@@ -155,6 +155,40 @@ with col_result:
             unsafe_allow_html=True,
         )
 
+        # ── AI 語意分析 ──
+        if groq_key:
+            st.markdown("---")
+            st.markdown("### AI 語意分析")
+            with st.spinner("AI 正在深度分析..."):
+                try:
+                    from modules.ai_analyzer import ai_analyze
+                    ai_result = ai_analyze(message, groq_key)
+
+                    if ai_result.get("is_scam"):
+                        st.error(f"**AI 判斷：這是詐騙（信心 {ai_result.get('confidence', '?')}%）**")
+                    elif ai_result.get("is_scam") is False:
+                        st.success(f"**AI 判斷：這不是詐騙（信心 {ai_result.get('confidence', '?')}%）**")
+                    else:
+                        st.warning("**AI 無法確定**")
+
+                    st.markdown(f"**類型：** {ai_result.get('scam_type', '未知')}")
+                    st.markdown(f"**分析：** {ai_result.get('explanation', '')}")
+
+                    ai_flags = ai_result.get("red_flags", [])
+                    if ai_flags:
+                        st.markdown("**AI 發現的可疑點：**")
+                        for flag in ai_flags:
+                            st.markdown(f"- {flag}")
+
+                    ai_advice = ai_result.get("advice", "")
+                    if ai_advice:
+                        st.markdown(
+                            f'<div class="advice-box"><strong>AI 建議：</strong><br>{ai_advice}</div>',
+                            unsafe_allow_html=True,
+                        )
+                except Exception as e:
+                    st.error(f"AI 分析失敗：{e}")
+
         # 緊急聯絡
         st.markdown("")
         st.markdown("**緊急聯絡方式：**")
@@ -175,8 +209,16 @@ with col_result:
 st.markdown("---")
 st.caption("此工具僅供參考，不能取代專業判斷。如遇疑似詐騙請撥 165 反詐騙專線。")
 
-# ── Sidebar：詐騙知識庫 ──
+# ── Sidebar ──
 with st.sidebar:
+    st.title("設定")
+    groq_key = st.text_input("Groq API Key（免費申請）", type="password", help="到 https://console.groq.com 免費申請")
+    if groq_key:
+        st.success("AI 分析已啟用")
+    else:
+        st.info("輸入 Groq API Key 即可啟用 AI 語意分析（免費）")
+
+    st.markdown("---")
     st.title("詐騙知識庫")
     st.markdown("---")
 
